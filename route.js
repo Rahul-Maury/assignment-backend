@@ -1,82 +1,75 @@
 const express = require('express');
 const router = express.Router();
-const PostModel = require('./model')
+const Book = require('./model')
 const cors = require('cors')
 
 router.use(cors())
 
-router.post('/posts', async (req, res) => {
+router.get('/',(req,res)=>{
+    res.send('Welcome! This is home page!')
+})
 
-    const post = new PostModel(req.body)
+router.post('/books', async (req, res) => {
+    try{
+        const book = new Book(req.body)
+        await book.save();
+        res.send(book);
+    }catch(e){
+        res.send(e);
+    }
+
+})
+
+router.get('/books', async (req, res) => {
+    try{
+        const books = await Book.find({})
+        res.send(books);
+    }catch(e){
+        res.send(e);
+    }
+})
+
+router.get('/books/:bookId', async (req, res) => {
+    try{
+        const bookId = req.params.bookId;
+        const book = await Book.findById({_id:bookId});
+        res.send(book);
+    }catch(e){
+        res.send(e);
+    }
+})
+
+
+
+router.delete('/books/:bookId', async (req, res) => {
+    try{
+        const book = await Book.findOneAndDelete({_id:req.params.bookId});
+        res.send(book);
+    }catch(e){
+        
+        res.send(e);
+    }
+})
+
+router.put('/books/:bookId', async (req, res) => {
+
+    try{
+        const book = await Book.findOneAndUpdate(
+            { _id: req.params.bookId }, // Find the user with this username
+            req.body, 
+            { new: true } 
+          );
     
-    await post.save();
-    res.send(post);
-
-})
-
-router.get('/posts/:postId', async (req, res) => {
-    const postId = req.params.postId;
-
-    const post = await PostModel.findById(postId)
-
-    res.send(post);
-
-})
-
-router.get('/allposts', async (req, res) => {
-
-    const post = await PostModel.find({})
-
-    res.send(post);
-
-})
-// Add a comment to a post
-router.post('/posts/:postId/comments', async (req, res) => {
-    try {
-        const postId = req.params.postId;
-        const comment = req.body.comment;
-
-        const post = await PostModel.findById(postId);
-        if (!post) {
-            return res.status(404).json({ error: 'Post not found' });
-        }
-
-        post.comments.push({ text: comment });
-        await post.save();
-
-        res.status(200).json(post);
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
+    
+          if(!book){
+            res.send('Error updating book!');
+          }
+        res.send(book);
+    }catch(e){
+        res.send(e);
     }
-});
 
-// Add a reply to a comment
-router.post('/posts/:postId/comments/:commentId/replies', async (req, res) => {
-
-    try {
-        const postId = req.params.postId;
-        const commentId = req.params.commentId;
-        const reply = req.body.reply;
-
-        const post = await PostModel.findById(postId);
-        if (!post) {
-            return res.status(404).json({ error: 'Post not found' });
-        }
-
-        const comment = post.comments.id(commentId);
-        if (!comment) {
-            return res.status(404).json({ error: 'Comment not found' });
-        }
-
-        comment.replies.push({ text: reply });
-        await post.save();
-
-        res.status(200).json(post);
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
+})
 
 
 module.exports = router;
